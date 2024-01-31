@@ -61,7 +61,7 @@ if __name__ == "__main__":
     with engine.connect() as connection:
 
         # 定義條件：比對 column1 的數字
-        condition = 20  # 這裡用你要比對的數字替換
+        condition = time.strftime("%d", time.localtime())  # 比對local time 的 day
 
         # 使用 SQLalchemy 的 select 函數來構建 SQL 查詢
         stmt = select(bill_data.c.bill_name).where(bill_data.c.day == condition)
@@ -70,8 +70,20 @@ if __name__ == "__main__":
         result = connection.execute(stmt)
 
         # 獲取查詢結果
-        for row in result:
-            print(row.bill_name)
+        rows = result.fetchall()
+
+        # 獲取查詢結果
+        if not rows:
+            msg = "no match"
+            asyncio.run(warning(msg))
+            print("no match")
+        else:
+            for row in rows:
+                msg = row.bill_name
+                asyncio.run(warning(msg))
+                print(row.bill_name)
+                print("message sent")
+
 
 
     setting_time = {'01': '信用卡費', '05': '瓦斯費', '23': '管理費', '12': '測試1號', '13': '測試2號'}
