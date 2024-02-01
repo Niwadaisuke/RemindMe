@@ -3,5 +3,4 @@
 config.ini
 .DS_Store
 Dockerfile
-requirements.txt
 cronjob

@@ -10,6 +10,39 @@ import asyncio
 async def warning(_msg):
     await bot.send_message(chat_id=Chatid, text=_msg)
 
+async def reminder():
+    # 創建一個 SQLAlchemy 引擎
+    engine = create_engine(db_url)
+
+    # 定義元數據，這裡的表結構應該與你的實際數據庫表一致
+    metadata = MetaData()
+
+    # 替換 'your_table' 為你的實際表名
+    bill_data = Table('bill_data', metadata, autoload_with=engine)
+
+    # 建立一個連接
+    with engine.connect() as connection:
+
+        # 定義條件：比對 column1 的數字
+        condition = time.strftime("%d", time.localtime())  # 比對local time 的 day
+
+        # 使用 SQLalchemy 的 select 函數來構建 SQL 查詢
+        stmt = select(bill_data.c.bill_name).where(bill_data.c.day == condition)
+
+        # 執行 SQL 查詢
+        result = connection.execute(stmt)
+
+        # 獲取查詢結果
+        rows = result.fetchall()
+
+        # 獲取查詢結果
+        if not rows:
+            print("Wounderful Day!")
+        else:
+            all_bill = "\n".join([row[0] for row in rows])
+            print(all_bill)
+            await warning(all_bill)
+
 # Define a command handler to handle the /edit command
 def edit(update, context):
     # Create the inline keyboard
@@ -48,54 +81,7 @@ if __name__ == "__main__":
     #connect database
     db_url = config.get('Postgresql', 'Database_URL')
 
-    # 創建一個 SQLAlchemy 引擎
-    engine = create_engine(db_url)
-
-    # 定義元數據，這裡的表結構應該與你的實際數據庫表一致
-    metadata = MetaData()
-
-    # 替換 'your_table' 為你的實際表名
-    bill_data = Table('bill_data', metadata, autoload_with=engine)
-
-    # 建立一個連接
-    with engine.connect() as connection:
-
-        # 定義條件：比對 column1 的數字
-        condition = time.strftime("%d", time.localtime())  # 比對local time 的 day
-
-        # 使用 SQLalchemy 的 select 函數來構建 SQL 查詢
-        stmt = select(bill_data.c.bill_name).where(bill_data.c.day == condition)
-
-        # 執行 SQL 查詢
-        result = connection.execute(stmt)
-
-        # 獲取查詢結果
-        rows = result.fetchall()
-
-        # 獲取查詢結果
-        if not rows:
-            msg = "no match"
-            asyncio.run(warning(msg))
-            print("no match")
-        else:
-            for row in rows:
-                msg = row.bill_name
-                asyncio.run(warning(msg))
-                print(row.bill_name)
-                print("message sent")
-
-
-
-    setting_time = {'01': '信用卡費', '05': '瓦斯費', '23': '管理費', '12': '測試1號', '13': '測試2號'}
-    
-    #telegram send messaage
-    print(time.strftime("%d", time.localtime()))
-    for d in setting_time.keys():
-        if d == time.strftime("%d", time.localtime()):
-            msg = "今天要繳" + setting_time[d] + "喔"
-            asyncio.run(warning(msg))
-            print("message sent")
-        print("d="+d)
+    asyncio.run(reminder())
 
     # Create an instance of the Updater class and add handlers
     updater = Updater(telegram_bot_token)
